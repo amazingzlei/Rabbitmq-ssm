@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:rabbit="http://www.springframework.org/schema/rabbit"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+       http://www.springframework.org/schema/beans/spring-beans.xsd
+       http://www.springframework.org/schema/context
+       http://www.springframework.org/schema/context/spring-context.xsd
+       http://www.springframework.org/schema/rabbit
+       http://www.springframework.org/schema/rabbit/spring-rabbit.xsd">
+
+
+    <!--<context:property-placeholder location="classpath:appConfig.properties"  ignore-unresolvable="true"/>-->
+
+    <context:component-scan base-package="com.fh.*"/>
+
+    <!-- 1.定义RabbitMQ的连接工厂 -->
+    <rabbit:connection-factory id="connectionFactory"
+                               host="localhost" port="5672" username="myrabbitmq" password="123456"
+                               virtual-host="myVirtualHost" />
+    <!-- 2.MQ的管理，包括队列、交换器等 类似channel的作用-->
+    <rabbit:admin connection-factory="connectionFactory" />
+
+    <!-- 3.定义队列-->
+    <rabbit:queue name="myQueue1" auto-declare="true" durable="true"></rabbit:queue>
+    <rabbit:queue name="myQueue2" auto-declare="true" durable="true"></rabbit:queue>
+
+    <rabbit:queue name="myQueue3" auto-declare="true" durable="true"></rabbit:queue>
+    <rabbit:queue name="myQueue4" auto-declare="true" durable="true"></rabbit:queue>
+
+    <rabbit:queue name="myQueue5" auto-declare="true" durable="true"></rabbit:queue>
+    <rabbit:queue name="myQueue6" auto-declare="true" durable="true"></rabbit:queue>
+
+    <!-- 4.定义交换器，暂时不把Q绑定到交换机，在管理界面去绑定 -->
+    <rabbit:direct-exchange name="directExchange" auto-declare="true" >
+        <rabbit:bindings>
+            <rabbit:binding queue="myQueue1" key="routekey1"></rabbit:binding>
+            <rabbit:binding queue="myQueue2" key="routekey2"></rabbit:binding>
+        </rabbit:bindings>
+    </rabbit:direct-exchange>
+
+    <rabbit:fanout-exchange name="fanoutExchange" auto-declare="true" >
+        <rabbit:bindings>
+            <rabbit:binding queue="myQueue3"></rabbit:binding>
+            <rabbit:binding queue="myQueue4"></rabbit:binding>
+        </rabbit:bindings>
+    </rabbit:fanout-exchange>
+
+    <rabbit:topic-exchange name="topicExchange" auto-declare="true" >
+        <rabbit:bindings>
+            <rabbit:binding pattern="*.new" queue="myQueue5"></rabbit:binding>
+            <rabbit:binding pattern="new.*" queue="myQueue6"></rabbit:binding>
+        </rabbit:bindings>
+    </rabbit:topic-exchange>
+
+    <!-- 5.定义Rabbit模板，指定连接工厂以及定义exchange(exchange要和上面的一致) -->
+    <rabbit:template id="directTemplate" connection-factory="connectionFactory" exchange="directExchange" />
+    <rabbit:template id="fanoutTemplate" connection-factory="connectionFactory" exchange="fanoutExchange"/>
+    <rabbit:template id="topicTemplate" connection-factory="connectionFactory" exchange="topicExchange" />
+    <rabbit:template id="myTemplate" connection-factory="connectionFactory" message-converter="myMessageResolver"/>
+
+    <!--6.队列监听 如果采用前端接受，则将下面的配置注释-->
+    <!--<rabbit:listener-container connection-factory="connectionFactory">-->
+        <!--<rabbit:listener ref="consumer01" method="listenA" queue-names="myQueue1"></rabbit:listener>-->
+        <!--<rabbit:listener ref="consumer02" method="listenA" queue-names="myQueue2"></rabbit:listener>-->
+        <!--<rabbit:listener ref="consumer03" method="listenA" queue-names="myQueue3"></rabbit:listener>-->
+        <!--<rabbit:listener ref="consumer04" method="listenA" queue-names="myQueue4"></rabbit:listener>-->
+        <!--<rabbit:listener ref="consumer05" method="listenA" queue-names="myQueue5"></rabbit:listener>-->
+        <!--<rabbit:listener ref="consumer06" method="listenA" queue-names="myQueue6"></rabbit:listener>-->
+    <!--</rabbit:listener-container>-->
+
+    <!--7.消费者-->
+    <bean id="consumer01" class="com.fh.direct.consumer.Consumer01" />
+    <bean id="consumer02" class="com.fh.direct.consumer.Consumer02" />
+    <bean id="consumer03" class="com.fh.fonout.consumer.Consumer03" />
+    <bean id="consumer04" class="com.fh.fonout.consumer.Consumer04" />
+    <bean id="consumer05" class="com.fh.topic.consumer.Consumer05" />
+    <bean id="consumer06" class="com.fh.topic.consumer.Consumer06" />
+
+    <!--通过工厂模式创建消息解析器-->
+    <bean id="myMessageResolver" factory-bean="messageResolver" factory-method="messageConverter"></bean>
+    <bean id="messageResolver" class="com.fh.config.MyMessageConverter"></bean>
+
+</beans>

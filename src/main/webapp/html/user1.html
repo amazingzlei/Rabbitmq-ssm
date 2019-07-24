@@ -28,6 +28,7 @@ Welcome<br/>
 
     // 定义连接成功回调函数
     var on_connect = function(x) {
+        // "/queue"表示监听队列，这个是固定的
         //data.body是接收到的数据
         client.subscribe("/queue/myQueue1", function(data) {
             var msg = data.body;
